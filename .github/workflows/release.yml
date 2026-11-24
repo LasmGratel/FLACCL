@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }}
+    if: ${{ !github.event.deleted }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            runner: windows-2025
+            archive: FLACCL-win-x64.zip
+          - rid: linux-x64
+            runner: ubuntu-22.04
+            archive: FLACCL-linux-x64.tar.gz
+          - rid: linux-arm64
+            runner: ubuntu-22.04-arm
+            archive: FLACCL-linux-arm64.tar.gz
+          - rid: osx-x64
+            runner: macos-15-intel
+            archive: FLACCL-osx-x64.tar.gz
+          - rid: osx-arm64
+            runner: macos-15
+            archive: FLACCL-osx-arm64.tar.gz
+    env:
+      RID: ${{ matrix.rid }}
+      ARCHIVE: ${{ matrix.archive }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish NativeAOT executable
+        shell: bash
+        run: dotnet publish FLACCL.csproj -c Release -r "$RID" -o publish
+
+      - name: Package Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $files = @('publish/FLACCL.exe', 'LICENSE', 'LICENSE.LGPL')
+          Compress-Archive -LiteralPath $files -DestinationPath $env:ARCHIVE
+
+      - name: Package Linux or macOS executable
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir release-package
+          cp publish/FLACCL LICENSE LICENSE.LGPL release-package/
+          chmod +x release-package/FLACCL
+          tar -czf "$ARCHIVE" -C release-package FLACCL LICENSE LICENSE.LGPL
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.rid }}
+          path: ${{ matrix.archive }}
+          compression-level: 0
+          if-no-files-found: error
+          overwrite: true
+
+  release:
+    name: Add GitHub Release downloads
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create release or upload missing assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          shopt -s nullglob
+          archives=(release-assets/FLACCL-*.zip release-assets/FLACCL-*.tar.gz)
+          if (( ${#archives[@]} == 0 )); then
+            echo "No release archives were downloaded." >&2
+            exit 1
+          fi
+
+          if existing=$(gh release view --json assets --jq '.assets[].name' -- "$RELEASE_TAG"); then
+            missing=()
+            for archive in "${archives[@]}"; do
+              if ! grep -Fqx -- "${archive##*/}" <<< "$existing"; then
+                missing+=("$archive")
+              fi
+            done
+            if (( ${#missing[@]} > 0 )); then
+              gh release upload -- "$RELEASE_TAG" "${missing[@]}"
+            fi
+          else
+            gh release create --verify-tag --generate-notes -- "$RELEASE_TAG" "${archives[@]}"
+          fi
