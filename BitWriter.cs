@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
 // Bit writer adapted from CUETools.Codecs (Gregory S. Chudov, LGPL-2.1-or-later).
 using System;
 

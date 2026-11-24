@@ -1,4 +1,5 @@
 /**
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  * CUETools.FLACCL: FLAC audio encoder using OpenCL
  * Copyright (c) 2009-2025 Grigory Chudov
  *

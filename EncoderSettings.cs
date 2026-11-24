@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-only
+
 namespace FLACCL;
 
 internal readonly record struct PcmFormat(int BitsPerSample, int ChannelCount, int SampleRate, uint ChannelMask = 0)

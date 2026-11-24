@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-only
+
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;

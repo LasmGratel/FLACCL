@@ -138,6 +138,6 @@ Thanks to **Grigory S. Chudov**, credited as **Gregory S. Chudov** in some sourc
 
 ## License
 
-`FLACCLWriter.cs`, `flac.cl`, and the CUETools-derived `BitWriter.cs` retain their copyright and LGPL 2.1-or-later notices. [GNU Lesser General Public License, version 2.1](LICENSE.LGPL)
+FLACCL is distributed under the GNU Lesser General Public License, version 2.1 (LGPL-2.1-only). [Full license text](LICENSE)
 
-The project directory also contains the [GNU General Public License, version 2](LICENSE).
+The CUETools-derived files retain their original copyright and LGPL-2.1-or-later notices. The source for each binary release is available in the GitHub source archive for the same tag. See [Building from source](#building-from-source) for rebuild instructions.

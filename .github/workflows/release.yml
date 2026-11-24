@@ -63,7 +63,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $files = @('publish/FLACCL.exe', 'LICENSE', 'LICENSE.LGPL')
+          $files = @('publish/FLACCL.exe', 'LICENSE')
           Compress-Archive -LiteralPath $files -DestinationPath $env:ARCHIVE
 
       - name: Package Linux or macOS executable
@@ -71,9 +71,9 @@ jobs:
         shell: bash
         run: |
           mkdir release-package
-          cp publish/FLACCL LICENSE LICENSE.LGPL release-package/
+          cp publish/FLACCL LICENSE release-package/
           chmod +x release-package/FLACCL
-          tar -czf "$ARCHIVE" -C release-package FLACCL LICENSE LICENSE.LGPL
+          tar -czf "$ARCHIVE" -C release-package FLACCL LICENSE
 
       - uses: actions/upload-artifact@v7
         with:
